@@ -13,33 +13,49 @@ interface Event {
 
 const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate(); // Utilisé pour la navigation
+  const navigate = useNavigate();
   const [event, setEvent] = useState<Event | null>(null);
+  const [showModal, setShowModal] = useState(false); // Pour afficher le modal
+  const isAuthenticated = localStorage.getItem("isAdmin") === "true"; // Vérification si l'utilisateur est admin
 
   useEffect(() => {
     if (id) {
-      // Charger les événements depuis localStorage
+      const storedEvents = localStorage.getItem("events");
+      const eventsFromStorage: Event[] = storedEvents
+        ? JSON.parse(storedEvents)
+        : [];
+      const foundEvent = eventsFromStorage.find((event) => event.id === id);
+      setEvent(foundEvent || null);
+    }
+  }, [id]);
+
+  const handleDelete = () => {
+    if (event) {
       const storedEvents = localStorage.getItem("events");
       const eventsFromStorage: Event[] = storedEvents
         ? JSON.parse(storedEvents)
         : [];
 
-      // Rechercher l'événement correspondant à l'ID
-      const foundEvent = eventsFromStorage.find((event) => event.id === id);
-
-      setEvent(foundEvent || null); // Mettre à jour l'état avec l'événement trouvé
+      // Filtrer l'événement à supprimer
+      const updatedEvents = eventsFromStorage.filter((e) => e.id !== event.id);
+      localStorage.setItem("events", JSON.stringify(updatedEvents)); // Sauvegarder les événements après suppression
+      navigate("/events"); // Rediriger vers la page des événements après la suppression
     }
-  }, [id]);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false); // Fermer le modal
+  };
 
   if (!event) {
-    return <div>Événement non trouvé.</div>; // Afficher un message si aucun événement n'est trouvé
+    return <div>Événement non trouvé.</div>;
   }
 
   return (
     <div className="p-6">
       <button
         className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        onClick={() => navigate("/events")} // Retourner à la page des événements
+        onClick={() => navigate("/events")}
       >
         Retour
       </button>
@@ -56,6 +72,40 @@ const EventDetailPage: React.FC = () => {
       <p>
         <strong>Location:</strong> {event.location}
       </p>
+
+      {isAuthenticated && (
+        <button
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          onClick={() => setShowModal(true)} // Ouvrir le modal de confirmation
+        >
+          Supprimer l'événement
+        </button>
+      )}
+
+      {/* Modal de confirmation */}
+      {showModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-10">
+          <div className="bg-white p-6 rounded-md shadow-lg w-1/3">
+            <h3 className="text-xl font-semibold mb-4">
+              Êtes-vous sûr de vouloir supprimer cet événement ?
+            </h3>
+            <div className="flex justify-between">
+              <button
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                onClick={handleModalClose}
+              >
+                Annuler
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                onClick={handleDelete}
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

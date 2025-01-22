@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Card from "../components/card";
 
 // Définition de l'interface pour l'événement
@@ -13,6 +14,8 @@ interface Event {
 
 const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
+  const navigate = useNavigate();
+  const isAuthenticated = localStorage.getItem("isAdmin") === "true"; // Vérification si l'utilisateur est admin
 
   useEffect(() => {
     // Charger les événements depuis localStorage
@@ -28,7 +31,7 @@ const EventsPage: React.FC = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-semibold mb-4">Événements disponibles</h1>
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {events.map((event) => (
             <Card
@@ -38,7 +41,7 @@ const EventsPage: React.FC = () => {
               imageUrl={event.imageUrl}
               onClick={() => {
                 // Rediriger vers la page des détails de l'événement
-                window.location.href = `/events/${event.id}`;
+                navigate(`/events/${event.id}`);
               }}
             />
           ))}
