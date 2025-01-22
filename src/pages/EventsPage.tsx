@@ -15,7 +15,6 @@ interface Event {
 const EventsPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const navigate = useNavigate();
-  const isAuthenticated = localStorage.getItem("isAdmin") === "true"; // Vérification si l'utilisateur est admin
 
   useEffect(() => {
     // Charger les événements depuis localStorage
