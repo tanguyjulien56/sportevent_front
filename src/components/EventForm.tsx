@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import * as yup from "yup";
+import SaveEventsButton from "./SaveEventsButton";
 
 // Schéma de validation avec Yup
 const schema = yup.object().shape({
@@ -190,6 +191,7 @@ const EventForm: React.FC = () => {
           <button type="submit" className="btn btn-primary w-full">
             Créer l'événement
           </button>
+          <SaveEventsButton />
         </div>
       </form>
 
@@ -206,6 +208,7 @@ const EventForm: React.FC = () => {
             >
               Fermer
             </button>
+            <SaveEventsButton />
           </div>
         </div>
       )}
