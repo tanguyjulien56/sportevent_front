@@ -39,7 +39,7 @@ const LoginPage: React.FC = () => {
       <div className="mb-4">
         <label
           htmlFor="username"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium  text-gray-700 dark:text-gray-300"
         >
           Nom d'utilisateur
         </label>
@@ -54,7 +54,7 @@ const LoginPage: React.FC = () => {
       <div className="mb-4">
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium  text-gray-700 dark:text-gray-300"
         >
           Mot de passe
         </label>

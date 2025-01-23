@@ -12,7 +12,7 @@ export default function Card({
   onClick,
 }: CardProps) {
   return (
-    <div className="card bg-base-100 w-96 shadow-xl">
+    <div className="card bg-base-100 lg:w-96 shadow-xl">
       <figure>
         <img className="w-full h-60 object-cover" src={imageUrl} alt="Event" />
       </figure>
