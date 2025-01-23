@@ -85,11 +85,11 @@ const EventDetailPage: React.FC = () => {
       {/* Modal de confirmation */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-10">
-          <div className="bg-white p-6 rounded-md shadow-lg w-1/3">
+          <div className="bg-white p-6 rounded-md shadow-lg w-auto">
             <h3 className="text-xl font-semibold mb-4">
               Êtes-vous sûr de vouloir supprimer cet événement ?
             </h3>
-            <div className="flex justify-between">
+            <div className="flex justify-end gap-4">
               <button
                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                 onClick={handleModalClose}

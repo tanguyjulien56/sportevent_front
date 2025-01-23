@@ -1,9 +1,11 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import * as yup from "yup";
 import SaveEventsButton from "./SaveEventsButton";
+import Card from "./card";
 
 // Schéma de validation avec Yup
 const schema = yup.object().shape({
@@ -38,6 +40,7 @@ interface Event {
 }
 
 const EventForm: React.FC = () => {
+  const navigate = useNavigate();
   // Charger les événements depuis localStorage
   const loadEventsFromLocalStorage = () => {
     const storedEvents = localStorage.getItem("events");
@@ -81,7 +84,7 @@ const EventForm: React.FC = () => {
     .slice(0, 4); // Limiter à 4 événements
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+    <div className="max-w-xl mx-auto p-6 bg-base-100 rounded-lg shadow-lg">
       <h2 className="text-2xl font-semibold text-center mb-6">
         Créer un Événement Sportif
       </h2>
@@ -91,7 +94,7 @@ const EventForm: React.FC = () => {
         <div className="mb-4">
           <label
             htmlFor="name"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Nom de l'événement
           </label>
@@ -111,7 +114,7 @@ const EventForm: React.FC = () => {
         <div className="mb-4">
           <label
             htmlFor="date"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Date et Heure
           </label>
@@ -131,7 +134,7 @@ const EventForm: React.FC = () => {
         <div className="mb-4">
           <label
             htmlFor="location"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Lieu
           </label>
@@ -151,7 +154,7 @@ const EventForm: React.FC = () => {
         <div className="mb-4">
           <label
             htmlFor="description"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             Description
           </label>
@@ -170,7 +173,7 @@ const EventForm: React.FC = () => {
         <div className="mb-4">
           <label
             htmlFor="imageUrl"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             URL de l'image
           </label>
@@ -208,34 +211,32 @@ const EventForm: React.FC = () => {
             >
               Fermer
             </button>
-            <SaveEventsButton />
           </div>
         </div>
       )}
 
       {/* Les 4 prochains événements */}
-      <div className="mt-6">
-        <h3 className="text-xl font-semibold text-center mb-4">
+      <div className="mt-6 ">
+        <h3 className="text-xl font-semibold text-center mb-4 ">
           Prochains Événements
         </h3>
         {upcomingEvents.length === 0 ? (
-          <p className="text-center text-gray-500">
+          <p className="text-center text-gray-500 dark:text-gray-300">
             Aucun événement prévu prochainement.
           </p>
         ) : (
-          <ul>
+          <ul className="flex flex-col gap-4 justify-center items-center">
             {upcomingEvents.map((event) => (
-              <li key={event.id} className="mb-4 p-4 border rounded-lg">
-                <h4 className="font-semibold">{event.name}</h4>
-                <p>{new Date(event.date).toLocaleString()}</p>
-                <p>{event.location}</p>
-                <p>{event.description}</p>
-                <img
-                  src={event.imageUrl}
-                  alt={event.name}
-                  className="w-full h-32 object-cover mt-2"
-                />
-              </li>
+              <Card
+                key={event.id}
+                title={event.name}
+                description={event.description}
+                imageUrl={event.imageUrl}
+                onClick={() => {
+                  // Rediriger vers la page des détails de l'événement
+                  navigate(`/events/${event.id}`);
+                }}
+              />
             ))}
           </ul>
         )}

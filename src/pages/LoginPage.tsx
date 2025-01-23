@@ -72,6 +72,8 @@ const LoginPage: React.FC = () => {
       >
         Se connecter
       </button>
+      <p>admin: admin123</p>
+      <p>guest: guest123</p>
     </div>
   );
 };
