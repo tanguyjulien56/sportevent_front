@@ -2,7 +2,8 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   daisyui: {
-    themes: ["light", "dark", "cupcake"], // Spécifie les thèmes que tu souhaites utiliser
+    themes: ["lofi", "black"],
+    darkTheme: "black",
   },
-  plugins: [require("daisyui")], // Assure-toi d'ajouter DaisyUI comme plugin
+  plugins: [require("daisyui")],
 };

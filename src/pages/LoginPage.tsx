@@ -1,80 +1,152 @@
+import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, NavLink } from "react-router-dom";
+import * as Yup from "yup";
+import { login } from "../services/api/auth";
+import { useUser } from "../services/Context/UserContext";
+import LoginInterface from "../services/interfaces/Login";
 
 const LoginPage: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+  const [errorAuthentification, setErrorAuthentification] =
+    useState<boolean>(false);
+  const { setUser } = useUser();
 
-  const handleLogin = () => {
-    // Exemple d'authentification simulée (à remplacer par un vrai backend)
-    if (username === "admin" && password === "admin123") {
-      const user = {
-        isAdmin: true,
-        username: username,
-        avatar:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDPIyqWfILYR2-i9tXjJxSA_SrgclY9z5Y1GSsQe5BIlOmHTGyqUegnK-8OrmKUCB-CCI&usqp=CAU", // Remplace cette URL par l'avatar réel
-      };
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("isAdmin", "true"); // L'utilisateur est administrateur
-      navigate("/"); // Rediriger vers la page des événements après connexion
-    } else if (username === "guest" && password === "guest123") {
-      const user = {
-        isAdmin: false,
-        username: username,
-        avatar: "https://mdbcdn.b-cdn.net/img/new/avatars/2.webp", // Remplace cette URL par l'avatar réel
-      };
-      localStorage.setItem("user", JSON.stringify(user)); // L'utilisateur est un invité
-      navigate("/"); // Rediriger vers la page des événements
-    } else {
-      setErrorMessage("Identifiants incorrects. Essayez encore.");
+  // Vérifier les informations de connexion enregistrées
+  const rememberMeCredentials = localStorage.getItem("rememberMeCredentials");
+  const initialValues: LoginInterface = {
+    email: rememberMeCredentials ? JSON.parse(rememberMeCredentials).email : "",
+    password: "",
+    rememberMe: rememberMeCredentials ? true : false,
+  };
+
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email("Adresse email invalide")
+      .required("L'adresse email est requise"),
+    password: Yup.string().required("Le mot de passe est requis"),
+  });
+
+  const handleSubmit = async (values: LoginInterface) => {
+    console.log("handleSubmit appelé avec les valeurs :", values);
+    try {
+      const response = await login(values);
+      console.log("API response:", response);
+      if (response && response.accessToken) {
+        localStorage.setItem("accessToken", response.accessToken);
+        if (response.refreshToken) {
+          localStorage.setItem("refreshToken", response.refreshToken);
+        }
+        setUser(response.user);
+        console.log("Connexion réussie :", response.user);
+        localStorage.setItem("user", JSON.stringify(response.user));
+
+        // Gérer "Se souvenir de moi"
+        if (values.rememberMe) {
+          localStorage.setItem(
+            "rememberMeCredentials",
+            JSON.stringify({
+              email: values.email,
+            })
+          );
+        } else {
+          localStorage.removeItem("rememberMeCredentials");
+        }
+
+        // Rediriger vers la page d'accueil
+        setRedirectUrl("/");
+      } else {
+        setErrorAuthentification(true);
+      }
+    } catch (error) {
+      console.error("Échec de la connexion :", error);
+      setErrorAuthentification(true);
     }
   };
 
+  if (redirectUrl) {
+    console.log("🚀 ~ redirectUrl:", redirectUrl);
+    return <Navigate to={redirectUrl} />;
+  }
+
   return (
-    <div className="p-6 max-w-md mx-auto mt-10">
-      <h2 className="text-2xl font-semibold mb-4">Connexion</h2>
-      {errorMessage && <div className="text-red-500 mb-4">{errorMessage}</div>}
-      <div className="mb-4">
-        <label
-          htmlFor="username"
-          className="block text-sm font-medium  text-gray-700 dark:text-gray-300"
-        >
-          Nom d'utilisateur
-        </label>
-        <input
-          type="text"
-          id="username"
-          className="mt-1 block w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+    <>
+      <div className="fixed top-0 left-0 right-0 bottom-0 z-20 bg-base-200 ">
+        <div className="hero min-h-screen">
+          <div className="hero-content  flex-col lg:flex-row-reverse">
+            <div className="text-center lg:text-left">
+              <h1 className="text-5xl  font-bold">SportEvents</h1>
+              <p className="py-6 ">
+                Connectez vous pour accéder au événements sportifs de votre club
+                et de votre entourage
+              </p>
+            </div>
+            <div className="card glass w-full max-w-sm shrink-0 shadow-2xl">
+              <Formik
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+              >
+                <Form className="card-body">
+                  <div className="form-control">
+                    <label htmlFor="email" className="label">
+                      <span className="label-text">Email</span>
+                    </label>
+                    <Field
+                      className="input input-bordered w-full"
+                      type="email"
+                      id="email"
+                      name="email"
+                    />
+                    <ErrorMessage
+                      component="div"
+                      className="text-red-500"
+                      name="email"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="password" className="label">
+                      <span className="label-text">Mot de passe</span>
+                    </label>
+                    <Field
+                      className="input input-bordered w-full"
+                      type="password"
+                      id="password"
+                      name="password"
+                    />
+                    <ErrorMessage
+                      component="div"
+                      className="text-red-500"
+                      name="password"
+                    />
+                  </div>
+
+                  {errorAuthentification && (
+                    <p className="text-red-500">Vous n'êtes pas autorisé.</p>
+                  )}
+                  <NavLink
+                    className="label-text-alt link link-hover"
+                    to="/send_email"
+                  >
+                    Mot de passe oublié ?
+                  </NavLink>
+                  <div className="flex  items-center my-2">
+                    <Field type="checkbox" id="rememberMe" name="rememberMe" />
+                    <label className="label-text-alt ml-2" htmlFor="rememberMe">
+                      Se souvenir de moi ?
+                    </label>
+                  </div>
+                  <button type="submit" className="btn btn-primary w-full">
+                    Se connecter
+                  </button>
+                </Form>
+              </Formik>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="mb-4">
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium  text-gray-700 dark:text-gray-300"
-        >
-          Mot de passe
-        </label>
-        <input
-          type="password"
-          id="password"
-          className="mt-1 block w-full px-4 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-      <button
-        className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
-        onClick={handleLogin}
-      >
-        Se connecter
-      </button>
-      <p>admin: admin123</p>
-      <p>guest: guest123</p>
-    </div>
+    </>
   );
 };
 

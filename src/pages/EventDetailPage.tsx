@@ -1,111 +1,128 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import MapBoxComponent from "../components/Mapbox/Mapbox";
 
-// Définition de l'interface pour l'événement
+import HandleRegisterButton from "../components/handleRegisterButton";
+import { checkUserParticipation } from "../services/api/check_particpation";
+import { getEventById } from "../services/api/get_event_by_id";
+
 interface Event {
   id: string;
   name: string;
   description: string;
   date: string;
   location: string;
+  latitude: number;
+  longitude: number;
   imageUrl: string;
+  participations: Array<{
+    fullName: string;
+    status: "confirmed" | "pending" | "absent";
+    joinedAt: string;
+  }>;
 }
 
 const EventDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id?: string }>();
+  const eventId = id ?? "";
   const navigate = useNavigate();
+  const user = localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user") as string)
+    : null;
   const [event, setEvent] = useState<Event | null>(null);
-  const [showModal, setShowModal] = useState(false); // Pour afficher le modal
-  const isAuthenticated = localStorage.getItem("isAdmin") === "true"; // Vérification si l'utilisateur est admin
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUserRegistered, setIsUserRegistered] = useState<boolean>(false);
 
+  // 🔄 Chargement de l'événement et vérification de l'inscription
   useEffect(() => {
-    if (id) {
-      const storedEvents = localStorage.getItem("events");
-      const eventsFromStorage: Event[] = storedEvents
-        ? JSON.parse(storedEvents)
-        : [];
-      const foundEvent = eventsFromStorage.find((event) => event.id === id);
-      setEvent(foundEvent || null);
+    if (!eventId || !user?.id) {
+      setError("L'ID de l'événement ou de l'utilisateur est manquant.");
+      setLoading(false);
+      return;
     }
-  }, [id]);
 
-  const handleDelete = () => {
-    if (event) {
-      const storedEvents = localStorage.getItem("events");
-      const eventsFromStorage: Event[] = storedEvents
-        ? JSON.parse(storedEvents)
-        : [];
+    const fetchData = async () => {
+      try {
+        // Récupérer les détails de l'événement
+        const eventResponse = await getEventById(eventId);
+        setEvent(eventResponse.data.data);
 
-      // Filtrer l'événement à supprimer
-      const updatedEvents = eventsFromStorage.filter((e) => e.id !== event.id);
-      localStorage.setItem("events", JSON.stringify(updatedEvents)); // Sauvegarder les événements après suppression
-      navigate("/events"); // Rediriger vers la page des événements après la suppression
-    }
-  };
+        // Vérifier si l'utilisateur est inscrit
+        const participationResponse = await checkUserParticipation(
+          eventId,
+          user.id
+        );
+        setIsUserRegistered(participationResponse.isRegistered);
+      } catch (err) {
+        setError("Impossible de charger l'événement ou la participation.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleModalClose = () => {
-    setShowModal(false); // Fermer le modal
-  };
+    fetchData();
+  }, [eventId, user?.id, isUserRegistered]); // Ajout de `isUserRegistered` pour mettre à jour les participants après l'inscription/désinscription
 
-  if (!event) {
-    return <div>Événement non trouvé.</div>;
-  }
+  if (loading)
+    return <div className="text-center text-gray-500">Chargement...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!event) return <div className="text-gray-500">Événement non trouvé.</div>;
 
   return (
-    <div className="p-6">
-      <button
-        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        onClick={() => navigate("/events")}
-      >
-        Retour
-      </button>
-      <h1 className="text-3xl font-semibold mb-4">{event.name}</h1>
-      <img
-        src={event.imageUrl}
-        alt={event.name}
-        className="w-full h-64 object-cover mb-4"
-      />
-      <p className="mb-4">{event.description}</p>
-      <p>
-        <strong>Date:</strong> {new Date(event.date).toLocaleDateString()}
-      </p>
-      <p>
-        <strong>Location:</strong> {event.location}
-      </p>
-
-      {isAuthenticated && (
+    <div className="hero min-h-screen bg-base-200 pt-24">
+      <div className="p-6 max-w-3xl mx-auto ">
         <button
-          className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          onClick={() => setShowModal(true)} // Ouvrir le modal de confirmation
+          className="btn btn-secondary mb-4 px-4 py-2"
+          onClick={() => navigate("/events")}
         >
-          Supprimer l'événement
+          ← Retour
         </button>
-      )}
 
-      {/* Modal de confirmation */}
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-10">
-          <div className="bg-white p-6 rounded-md shadow-lg w-auto">
-            <h3 className="text-xl font-semibold mb-4">
-              Êtes-vous sûr de vouloir supprimer cet événement ?
-            </h3>
-            <div className="flex justify-end gap-4">
-              <button
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                onClick={handleModalClose}
-              >
-                Annuler
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                onClick={handleDelete}
-              >
-                Supprimer
-              </button>
-            </div>
+        <h1 className="text-3xl font-bold mb-4">{event.name}</h1>
+        <img
+          src={event.imageUrl}
+          alt={event.name}
+          className="w-full h-64 object-cover rounded-lg mb-4"
+        />
+        <p>{event.description}</p>
+        <p className="mt-2">
+          <strong>Date:</strong> {new Date(event.date).toLocaleDateString()}
+        </p>
+        <p>
+          <strong>Lieu:</strong> {event.location}
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <MapBoxComponent location={event.location} />
+
+          <div>
+            <h2 className="text-xl font-semibold mb-2">
+              Participants confirmés
+            </h2>
+            {event.participations.length > 0 ? (
+              <ul className="list-disc pl-5">
+                {event.participations
+                  .filter((p) => p.status === "confirmed")
+                  .map((p) => (
+                    <li key={p.fullName}>{p.fullName}</li>
+                  ))}
+              </ul>
+            ) : (
+              <p>Aucun participant confirmé pour le moment.</p>
+            )}
+
+            {user && (
+              <HandleRegisterButton
+                eventIdProps={eventId}
+                userId={user.id}
+                isUserRegistered={isUserRegistered}
+                onStatusChange={setIsUserRegistered}
+              />
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
